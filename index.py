@@ -1,12 +1,17 @@
 import json
 import time
+import re
 import markdown
-import html
 import asyncio
 import markupsafe
 
+from datetime import datetime, UTC
 from quart import Quart, render_template, request, jsonify, redirect
 from utils import sqlite, tickets, jinja_filters
+from utils.md_extensions import URLifyExtension, DiscordEmojiExtension, SmallLineExtension
+
+# RegEx patterns
+re_mentions = re.compile(r"(<(@|#|@&)(\d+)>)")
 
 # Quart itself
 app = Quart(__name__)
@@ -23,12 +28,17 @@ db.create_tables()  # Attempt to create table(s) if not exists already.
 with open("config.json", "r") as f:
     config = json.load(f)
 
-md = markdown.Markdown(extensions=["meta"])
+md = markdown.Markdown(
+    extensions=[
+        DiscordEmojiExtension(),
+        "meta", "extra", "toc", "sane_lists",
+        URLifyExtension(),
+        SmallLineExtension()
+    ]
+)
 
 # Jinja2 template filters
 app.jinja_env.filters["markdown"] = lambda text: markupsafe.Markup(md.convert(text))
-app.jinja_env.filters["discord_to_html"] = lambda text: jinja_filters.discord_to_html(text)
-app.jinja_env.filters["find_url"] = lambda text: jinja_filters.match_url(text)
 app.jinja_env.filters["detect_file"] = lambda file: jinja_filters.detect_file(file)
 
 
@@ -82,23 +92,38 @@ async def show_ticket(ticket_id):
     for msg in get_logs["messages"]:
         temp_holder = []
         for content in msg["content"]:
+            converted_msg = None
             if content["msg"]:
-                converted_msg = html.escape(content["msg"]).encode("ascii", "xmlcharrefreplace").decode()
-            else:
-                converted_msg = None
+                converted_msg = content["msg"]
+
+            _mentions = {
+                "users": content.get("mentions", {}).get("users", {}),
+                "roles": content.get("mentions", {}).get("roles", {}),
+                "channels": content.get("mentions", {}).get("channels", {})
+            }
+
+            if converted_msg:
+                for g in re_mentions.findall(converted_msg):
+                    if g[1] == "@":
+                        converted_msg = converted_msg.replace(g[0], f"@{_mentions['users'][g[2]]}")
+                    elif g[1] == "#":
+                        converted_msg = converted_msg.replace(g[0], f"#{_mentions['channels'][g[2]]}")
+                    elif g[1] == "@&":
+                        converted_msg = converted_msg.replace(g[0], f"@{_mentions['roles'][g[2]]}")
 
             temp_holder.append({
                 "id": content["id"],
                 "msg": converted_msg,
-                "attachments": content["attachments"] if "attachments" in content else False,
+                "attachments": content.get("attachments", []),
                 "reply": content.get("reply", None),
                 "stickers": content.get("stickers", []),
-                "edited": content["edited"] if "edited" in content and content["edited"] else False,
-                "deleted": True if "deleted" in content and content["deleted"] else False
+                "edited": content.get("edited", False),
+                "deleted": content.get("deleted", False)
             })
 
         converted_logs.append({
-            "author": msg["author"], "timestamp": msg["timestamp"],
+            "author": msg["author"],
+            "timestamp": datetime.fromtimestamp(msg["timestamp"], UTC).strftime("%Y-%m-%d %H:%M:%S (UTC)"),
             "content": temp_holder
         })
 
@@ -111,9 +136,12 @@ async def show_ticket(ticket_id):
             messages_map[msg_entry["id"]]["href_id"] = f"message-{i}-{ii}"
             messages_map[msg_entry["id"]]["author"] = entry["author"]
 
+            if msg_entry["msg"] is not None:
+                msg_entry["msg"] = msg_entry["msg"].replace("\n", " ")
+
             messages_map[msg_entry["id"]]["msg_shoten"] = (
                 msg_entry["msg"]
-                if len(msg_entry["msg"] or "") < 32
+                if len(msg_entry["msg"] or "...") < 32
                 else msg_entry["msg"][:32].strip() + "..."
             )
 

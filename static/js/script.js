@@ -45,11 +45,6 @@ function toggle_msg(type, target) {
 
 window.onload = function() {
   // Make all timestamps
-  let timestamps = document.getElementsByClassName("timestamp")
-  for (var i = 0; i < timestamps.length; i++) {
-    let converted_date = unix_to_timestamp(timestamps[i])
-  }
-
   unix_to_timestamp(document.getElementById("expire_date"))
   unix_to_timestamp(document.getElementById("created_at"))
 

@@ -46,14 +46,17 @@
         <span class="tag context">Ticket context</span>
       </h2>
       <div class="content-container">
-        <span class="content"><p>{{ context | safe | find_url | discord_to_html | markdown }}</p></span>
+        <span class="content"><p>{{ context | safe | markdown }}</p></span>
       </div>
     </div>
     {% for g in logs.messages %}
       {% set auth_count = loop.index %}
       {% if g.content[0].msg != context %}
         <div class="message {% if g.author == official_bot %}system{% endif %}">
-          <img class="avatar" src="{{ logs.users[g.author].avatar }}" onerror="this.src='{{ url_for('static', filename='images/default.png') }}'">
+          <img
+            class="avatar" src="{{ logs.users[g.author].avatar }}"
+            onerror="this.src='{{ url_for('static', filename='images/default.png') }}'"
+          >
           <h2 class="username">
             {{ logs.users[g.author].username }}
             {% if logs.users[g.author]['badge'] %}
@@ -80,7 +83,7 @@
                     <span class="ref-content" onclick="scroll_to('{{ ref_msg.href_id }}')">
                       <img class="ref-avatar" src="{{ ref_user.avatar }}">
                       <div class="ref-username">{{ ref_user.username }}</div>
-                      {{ ref_msg.msg_shoten or "..." }}
+                      <p>{{ ref_msg.msg_shoten | safe }}</p>
                     </span>
                   {% endif %}
                 {% endif %}
@@ -90,16 +93,16 @@
                   {% if content.edited %}
                     {% set msg_to_send = content.edited %}
                     <div class="edited-content tooltop hide" data-tooltip="test">
-                      {{ content.msg | safe | find_url | discord_to_html | markdown }}
+                      {{ content.msg | safe | markdown }}
                     </div>
                   {% endif %}
 
                   {% if content.deleted %}
                     <div class="deleted-content tooltip" data-tooltip="This message was deleted...">
-                      {{ msg_to_send | safe | find_url | discord_to_html | markdown }}
+                      {{ msg_to_send | safe | markdown }}
                     </div>
                   {% elif content.msg %}
-                    {{ msg_to_send | safe | find_url | discord_to_html | markdown }}
+                    {{ msg_to_send | safe | markdown }}
                   {% endif %}
 
                   {% if content.attachments %}

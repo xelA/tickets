@@ -17,6 +17,12 @@
   }
 }
 
+small {
+  color: #949ba4;
+  font-size: 12px;
+  line-height: 1.11rem;
+}
+
 .messages {
   display: flex;
   flex-direction: column;
@@ -136,9 +142,9 @@
 
       &::before {
         border-bottom: 0 solid transparent;
-        border-left: 3px solid #4e5058;
+        border-left: 2px solid #4e5058;
         border-right: 0 solid transparent;
-        border-top: 3px solid #4e5058;
+        border-top: 2px solid #4e5058;
         border-top-left-radius: 6px;
         content: ' ';
         display: block;

@@ -1,6 +1,6 @@
-@import 'components/global';
-@import 'components/messages';
-@import 'components/modal';
-@import 'components/title';
-@import 'components/tooltip';
-@import 'components/responsive';
+@use 'components/global';
+@use 'components/messages';
+@use 'components/modal';
+@use 'components/responsive';
+@use 'components/title';
+@use 'components/tooltip';
