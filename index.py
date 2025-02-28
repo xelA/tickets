@@ -104,12 +104,16 @@ async def show_ticket(ticket_id):
 
             if converted_msg:
                 for g in re_mentions.findall(converted_msg):
-                    if g[1] == "@":
-                        converted_msg = converted_msg.replace(g[0], f"@{_mentions['users'][g[2]]}")
-                    elif g[1] == "#":
-                        converted_msg = converted_msg.replace(g[0], f"#{_mentions['channels'][g[2]]}")
-                    elif g[1] == "@&":
-                        converted_msg = converted_msg.replace(g[0], f"@{_mentions['roles'][g[2]]}")
+                    try:
+                        if g[1] == "@":
+                            converted_msg = converted_msg.replace(g[0], f"@{_mentions['users'][g[2]]}")
+                        elif g[1] == "#":
+                            converted_msg = converted_msg.replace(g[0], f"#{_mentions['channels'][g[2]]}")
+                        elif g[1] == "@&":
+                            converted_msg = converted_msg.replace(g[0], f"@{_mentions['roles'][g[2]]}")
+                    except Exception:
+                        # Old ticket, no mentions saved
+                        pass
 
             temp_holder.append({
                 "id": content["id"],
