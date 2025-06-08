@@ -11,6 +11,7 @@ tokens.json
 *.db
 examples/ticket-*
 !examples/submit.json
+uv.lock
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
