@@ -71,7 +71,7 @@
         margin-right: 10px;
         border-radius: 3px;
         transform: rotate(45deg);
-        background-color: vars.$dark-secondary;
+        background-color: vars.$light-highlight;
       }
     }
   }
@@ -106,7 +106,7 @@
 }
 
 .theme-light .navbar {
-  .links a + a::before { background-color: vars.$gray-light; }
+  .links a + a::before { background-color: vars.$dark-secondary; }
 
   .theme-toggle {
     .icon-sun { display: none; }
