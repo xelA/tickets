@@ -1,0 +1,410 @@
+@use 'sass:color';
+@use 'vars';
+
+// Embeds and message components (templates/_discord.html), sized like the Discord client.
+// Surfaces reuse the page cards, so they match the rest of the site in both themes.
+
+.embeds, .d-components {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  cursor: auto;
+}
+
+// ── Embeds ──────────────────────────────────────────────────────────────────
+
+.embed {
+  max-width: 520px;
+  border-radius: 4px;
+  border-left: 4px solid var(--embed-colour, var(--bar));
+  background-color: var(--bg-card);
+  box-shadow: var(--card-shadow);
+}
+
+.embed-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 8px 16px 16px 12px;
+
+  > * {
+    grid-column: 1;
+    margin-top: 8px;
+    min-width: 0;
+  }
+
+  &.has-thumbnail {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .markdown p, .markdown li { font-size: 14px; }
+}
+
+.embed-provider {
+  font-size: 12px;
+  color: var(--text-muted);
+
+  a { color: inherit; }
+}
+
+.embed-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong);
+
+  a { color: inherit; }
+}
+
+.embed-author-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.embed-title {
+  font-weight: 600;
+
+  .markdown p { font-size: 16px; color: var(--text-strong); }
+  a .markdown p { color: vars.$primary; }
+}
+
+.embed-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.embed-field-row {
+  display: grid;
+  grid-template-columns: repeat(var(--columns, 1), minmax(0, 1fr));
+  gap: 8px;
+}
+
+.embed-field-name .markdown p {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong);
+  margin-bottom: 2px;
+}
+
+.embed-image {
+  margin-top: 16px;
+
+  .embed-media {
+    display: block;
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 4px;
+    cursor: zoom-in;
+  }
+}
+
+.embed-thumbnail {
+  grid-column: 2;
+  grid-row: 1 / 8;
+  justify-self: end;
+  margin-left: 16px;
+
+  .embed-thumbnail-media {
+    display: block;
+    max-width: 80px;
+    max-height: 80px;
+    border-radius: 4px;
+    object-fit: contain;
+    cursor: zoom-in;
+  }
+}
+
+.embed-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.embed-footer-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.embed-footer-dot { margin: 0 4px; }
+
+.embed-media-only .embed-media {
+  display: block;
+  max-width: min(400px, 100%);
+  max-height: 300px;
+  border-radius: 8px;
+  cursor: zoom-in;
+}
+
+video.embed-media { cursor: auto; }
+
+// ── Components ──────────────────────────────────────────────────────────────
+
+.d-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+// Discord buttons, colours from the client
+@mixin d-button-colour($bg) {
+  background-color: $bg;
+
+  &:not(.disabled):hover { background-color: color.adjust($bg, $lightness: -6%); }
+}
+
+.d-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 60px;
+  height: 32px;
+  padding: 2px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color .17s ease;
+
+  &:hover { text-decoration: none; color: #fff; }
+
+  &.primary, &.premium { @include d-button-colour(vars.$blurple); }
+  &.secondary, &.link { @include d-button-colour(vars.$secondary-btn); }
+  &.success { @include d-button-colour(#248046); }
+  &.danger { @include d-button-colour(#da373c); }
+
+  &.disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .emoji {
+    width: 18px;
+    height: 18px;
+  }
+
+  .external {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+}
+
+.theme-light .d-button {
+  &.secondary, &.link { @include d-button-colour(#6d6f78); }
+}
+
+.d-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 400px;
+  min-height: 40px;
+  padding: 8px 8px 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background-color: var(--bg-inset);
+  font-size: 15px;
+  cursor: pointer;
+
+  &.disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    margin-left: auto;
+    fill: var(--text-muted);
+  }
+
+  .emoji {
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+    vertical-align: -3px;
+  }
+}
+
+.d-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-body);
+}
+
+.d-select-placeholder { color: var(--text-muted); }
+
+// Components V2
+
+.d-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 640px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  border-left: 4px solid var(--accent, var(--hairline));
+  background-color: var(--bg-card);
+  box-shadow: var(--card-shadow);
+}
+
+.d-section {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.d-section-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.d-section-accessory {
+  flex-shrink: 0;
+  align-self: center;
+
+  &:has(.d-thumbnail) { align-self: flex-start; }
+}
+
+.d-thumbnail {
+  width: 85px;
+  height: 85px;
+  border-radius: 8px;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    object-fit: cover;
+    cursor: zoom-in;
+  }
+}
+
+// Discord's gallery layouts on a 6 column grid:
+// 1 full, 2 halves, 3 one big + two stacked, 4 2x2, 5 two + three, 6 3x2,
+// 7 one + 3x2, 8 two + 3x2, 9 3x3, 10 one + 3x3
+.d-gallery {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: 120px;
+  gap: 4px;
+  max-width: 520px;
+  border-radius: 8px;
+  overflow: hidden;
+
+  .d-gallery-item { grid-column: span 2; }
+
+  &.count-1 {
+    grid-auto-rows: auto;
+
+    .d-gallery-item { grid-column: span 6; }
+    .d-gallery-media { max-height: 350px; }
+  }
+
+  &.count-2, &.count-4 {
+    grid-auto-rows: 160px;
+
+    .d-gallery-item { grid-column: span 3; }
+  }
+
+  &.count-3 {
+    grid-auto-rows: 160px;
+
+    .d-gallery-item { grid-column: span 2; }
+    .d-gallery-item:first-child { grid-column: span 4; grid-row: span 2; }
+  }
+
+  &.count-5, &.count-8 {
+    .d-gallery-item:nth-child(-n+2) { grid-column: span 3; grid-row: span 2; }
+  }
+
+  &.count-7, &.count-10 {
+    .d-gallery-item:first-child { grid-column: span 6; grid-row: span 2; }
+  }
+}
+
+.d-gallery-item {
+  min-width: 0;
+  background-color: var(--bg-inset);
+}
+
+.d-gallery-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: zoom-in;
+}
+
+.count-1 .d-gallery-media { object-fit: contain; height: auto; }
+video.d-gallery-media { cursor: auto; background-color: #000; }
+
+.d-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 432px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background-color: var(--bg-inset);
+
+  svg {
+    flex-shrink: 0;
+    width: 30px;
+    height: 40px;
+    fill: vars.$primary;
+  }
+}
+
+.d-file-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  a, .d-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+  }
+}
+
+.d-file-size {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.d-separator {
+  margin: 0;
+
+  &.spacing-2 { margin: 8px 0; }
+
+  &.divider {
+    height: 1px;
+    background-color: var(--hairline);
+  }
+}
+
+.theme-dark .d-separator.divider { background-color: rgba(255, 255, 255, .08); }

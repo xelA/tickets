@@ -1,99 +1,62 @@
-.channel-title {
+@use 'vars';
+
+// Ticket page: details under the channel header and the "closed" divider at the end
+
+.unknown-source {
+  margin-bottom: 20px;
+
+  .card-desc { color: var(--text-body); }
+}
+
+.ticket-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+
+  .card { padding: 14px 16px; }
+  .card-title { margin-bottom: 4px; }
+  .card-desc { color: var(--text-body); }
+}
+
+// "Show edited messages" sits next to Download JSON in the header
+.page-header .actions {
   align-items: center;
-  background-color: #181818;
-  display: flex;
-  flex-direction: row;
-  height: 36px;
-  padding: .5em;
+  gap: 16px;
+
+  .checkbox { font-size: 14px; color: var(--text-muted); }
+}
+
+// Discord's "new messages" bar, in red, marks the end of the ticket
+.closed-ticket {
   position: relative;
+  height: 0;
+  margin: 32px 0 8px;
+  border-top: 1px solid vars.$red;
 
-  svg { fill: #ccc; }
-  p { margin: 0; }
-
-  .channel-content {
-    align-items: center;
-    color: #ccc;
-    display: flex;
-    flex-direction: row;
-    margin-left: .25em;
-  }
-
-  .name {
-    font-size: 18px;
-    font-weight: bold;
-    line-height: 1;
-    margin-right: .75em;
-  }
-
-  .expire, #expire_date {
-    color: #72767d;
-    font-size: 16px;
-    font-style: italic;
-    font-weight: normal;
-    line-height: 1;
-  }
-
-  .download {
+  span {
     position: absolute;
-    right: 1.25em;
-    top: .55em;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0 6px 0 4px;
+    border-radius: 0 4px 4px 0;
+    background-color: vars.$red;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 14px;
+    letter-spacing: .02em;
+    text-transform: uppercase;
 
-    svg {
-      height: 32px;
-      width: 32px;
-      &:hover { fill: #7a7a7a; }
+    &::before {
+      content: '';
+      position: absolute;
+      right: 100%;
+      top: 0;
+      border: 7px solid transparent;
+      border-right: 4px solid vars.$red;
+      border-left: 0;
     }
   }
 }
-
-.unknown_source {
-  align-items: center;
-  background-color: #e74c3c;
-  display: flex;
-  height: 2em;
-  justify-content: center;
-  text-align: center;
-  width: 100%;
-
-  p {
-    display: inline-block;
-    line-height: 1;
-    margin: 0;
-  }
-
-  &.approved {
-    background-color: #f1c40f;
-    padding-bottom: .25em;
-    b, p { color: #000; }
-  }
-}
-
-.context-container {
-  box-shadow: rgba(0, 0, 0, .2) 0 2px 0, rgba(0, 0, 0, .06) 0 3px 0;
-  margin-bottom: .5em;
-  width: 100%;
-
-  .context {
-    background: #282828;
-    display: block;
-    padding: 1em 2em;
-
-    .author, .context-ticket, .confirmed_author, .created_at {
-      margin: 0;
-      white-space: pre-wrap;
-    }
-  }
-
-  .context-flex {
-    display: flex;
-    flex-direction: row;
-  }
-}
-
-.msg-options {
-  display: flex;
-  flex-direction: column;
-  margin-top: .5em;
-}
-
-.author_id { font-size: 14px; font-weight: normal; }

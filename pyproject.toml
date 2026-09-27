@@ -3,9 +3,19 @@ name = "TicketsAPI"
 version = "0.0.1"
 requires-python = ">=3.13"
 dependencies = [
+    "dotenvplus>=0.2.1",
     "jsonschema>=4.24.0",
     "markdown>=3.8",
+    "postgreslite>=1.0.0",
     "quart>=0.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "prisma==0.15.0",
+    "pyright>=1.1.401",
+    "ruff>=0.11.13",
+    "sass-embedded>=0.1.5",
 ]
 
 [tool.ruff]
@@ -15,7 +25,6 @@ indent-width = 4
 output-format = "concise"
 include = [
   "index.py",
-  "cogs/*.py",
   "utils/*.py",
 ]
 exclude = [
@@ -68,6 +77,7 @@ ignore = [
   "D210",  # No whitespaces surrounding docstring text
   "D212",  # Multi-line docstring start at first line
   "D400",  # Strictly must end with a period
+  "D415",  # Strictly must end with a period, question mark or exclamation point
   "D401",  # First line should be in imperative mood
   "D413",  # Missing blank line after last section
 
@@ -123,7 +133,6 @@ pythonVersion = "3.13"
 
 include = [
   "index.py",
-  "./cogs",
   "./utils",
 ]
 

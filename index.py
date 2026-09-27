@@ -1,17 +1,13 @@
 import json
 import time
-import re
-import markdown
 import asyncio
-import markupsafe
 
 from datetime import datetime, UTC
 from quart import Quart, render_template, request, jsonify, redirect
-from utils import sqlite, tickets, jinja_filters
-from utils.md_extensions import URLifyExtension, DiscordEmojiExtension, SmallLineExtension
-
-# RegEx patterns
-re_mentions = re.compile(r"(<(@|#|@&)(\d+)>)")
+from postgreslite import PostgresLite
+from utils import tickets, jinja_filters, discord_objects
+from utils.config import load_config
+from utils.md_extensions import DiscordMarkdown, plain_text
 
 # Quart itself
 app = Quart(__name__)
@@ -22,42 +18,53 @@ loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
 # General configs
-db = sqlite.Database()
-db.create_tables()  # Attempt to create table(s) if not exists already.
+config = load_config()
 
-with open("config.json", "r") as f:
-    config = json.load(f)
+# dotenvplus reads numbers as int, the API compares them with strings from JSON
+bot_id = str(config["BOT_ID"])
+api_token = str(config["API_TOKEN"])
 
-md = markdown.Markdown(
-    extensions=[
-        DiscordEmojiExtension(),
-        "meta", "extra", "toc", "sane_lists",
-        URLifyExtension(),
-        SmallLineExtension()
-    ]
-)
+# Create or update the tables from schema.sql
+database = PostgresLite(config.get("DB_PATH", "storage.db"))
+database.sync_schema("schema.sql")
+db = database.connect_async()
+
+discord_md = DiscordMarkdown()
 
 # Jinja2 template filters
-app.jinja_env.filters["markdown"] = lambda text: markupsafe.Markup(md.convert(text))
-app.jinja_env.filters["detect_file"] = lambda file: jinja_filters.detect_file(file)
+app.jinja_env.filters["markdown"] = lambda text, mentions=None: discord_md.render(text, mentions)
+app.jinja_env.filters["detect_file"] = jinja_filters.detect_file
 
 
-# Database cleaning task
+@app.context_processor
+def inject_globals():
+    """ Variables every template can use """
+    return {"year": datetime.now(UTC).year}
+
+
+# Database cleaning task, started and stopped with the server
+cleanup_tasks: set[asyncio.Task] = set()
+
+
 async def background_task():
     """ Delete old ticket entries for privacy reasons """
     while True:
-        db.execute("DELETE FROM tickets WHERE ? > expire", (int(time.time()),))
+        await db.execute("DELETE FROM tickets WHERE $1 > expire", int(time.time()))
         await asyncio.sleep(5)
 
 
 @app.before_serving
 async def startup():
-    app.background_task = asyncio.ensure_future(background_task())
+    """ Start deleting expired tickets """
+    cleanup_tasks.add(asyncio.create_task(background_task()))
 
 
 @app.after_serving
 async def shutdown():
-    app.background_task.cancel()
+    """ Stop the cleanup task and close the database """
+    for task in cleanup_tasks:
+        task.cancel()
+    await db.close()
 
 
 def jsonify_standard(name: str, description: str, code: int = 200):
@@ -69,90 +76,81 @@ def jsonify_standard(name: str, description: str, code: int = 200):
 
 @app.route("/")
 async def index():
-    return await render_template("index.html", config=config)
+    """ API docs and the JSON upload form """
+    return await render_template("index.html")
 
 
 @app.route("/<ticket_id>")
-async def show_ticket(ticket_id):
+async def show_ticket(ticket_id: str):
+    """ Render a ticket the way it looked in Discord """
     ticket_db = tickets.Ticket(db=db)
-    data = ticket_db.fetch_ticket(ticket_id)
+    data = await ticket_db.fetch_ticket(ticket_id)
 
     if not data:
-        return {"status": 404, "code": ticket_id}
+        return await render_template(
+            "ticket.html",
+            status=404, code=ticket_id, title="404 | xelA Tickets"
+        ), 404
 
-    if str(data["submitted_by"]) == str(config["bot_id"]):
-        valid_source = tickets.TicketSource.valid
-    else:
-        valid_source = tickets.TicketSource.unknown
+    valid_source = tickets.TicketSource.valid if str(data["submitted_by"]) == bot_id else tickets.TicketSource.unknown
 
-    get_logs = json.loads(data["logs"])
+    get_logs = data["logs"]
 
-    # To prevent XSS, fucking hell it's shit, but I'll find a better solution later...
     converted_logs = []
     for msg in get_logs["messages"]:
         temp_holder = []
         for content in msg["content"]:
-            converted_msg = None
-            if content["msg"]:
-                converted_msg = content["msg"]
-
-            _mentions = {
-                "users": content.get("mentions", {}).get("users", {}),
-                "roles": content.get("mentions", {}).get("roles", {}),
-                "channels": content.get("mentions", {}).get("channels", {})
-            }
-
-            if converted_msg:
-                for g in re_mentions.findall(converted_msg):
-                    try:
-                        if g[1] == "@":
-                            converted_msg = converted_msg.replace(g[0], f"@{_mentions['users'][g[2]]}")
-                        elif g[1] == "#":
-                            converted_msg = converted_msg.replace(g[0], f"#{_mentions['channels'][g[2]]}")
-                        elif g[1] == "@&":
-                            converted_msg = converted_msg.replace(g[0], f"@{_mentions['roles'][g[2]]}")
-                    except Exception:
-                        # Old ticket, no mentions saved
-                        pass
-
             temp_holder.append({
-                "id": content["id"],
-                "msg": converted_msg,
+                "id": content.get("id"),
+                "msg": content.get("msg") or None,
+                "mentions": content.get("mentions") if isinstance(content.get("mentions"), dict) else {},
                 "attachments": content.get("attachments", []),
                 "reply": content.get("reply", None),
                 "stickers": content.get("stickers", []),
                 "edited": content.get("edited", False),
-                "deleted": content.get("deleted", False)
+                "deleted": content.get("deleted", False),
+                # Both are optional, older tickets and other bots don't send them
+                "embeds": discord_objects.normalize_embeds(content.get("embeds")),
+                "components": discord_objects.normalize_components(content.get("components")),
             })
 
-        converted_logs.append({
-            "author": msg["author"],
-            "timestamp": datetime.fromtimestamp(msg["timestamp"], UTC).strftime("%Y-%m-%d %H:%M:%S (UTC)"),
-            "content": temp_holder
-        })
+        # A reply always starts a new message group, like Discord
+        groups: list[list[dict]] = []
+        for entry in temp_holder:
+            if not groups or entry["reply"]:
+                groups.append([])
+            groups[-1].append(entry)
+
+        for group in groups:
+            converted_logs.append({
+                "author": msg["author"],
+                "timestamp": datetime.fromtimestamp(msg["timestamp"], UTC).strftime("%Y-%m-%d %H:%M:%S (UTC)"),
+                "content": group
+            })
 
     get_logs["messages"] = converted_logs
 
     messages_map = {}
     for i, entry in enumerate(get_logs["messages"], start=1):
         for ii, msg_entry in enumerate(entry["content"], start=1):
-            messages_map[msg_entry["id"]] = msg_entry
-            messages_map[msg_entry["id"]]["href_id"] = f"message-{i}-{ii}"
-            messages_map[msg_entry["id"]]["author"] = entry["author"]
+            msg_entry["href_id"] = f"message-{i}-{ii}"
+            msg_entry["author"] = entry["author"]
 
-            if msg_entry["msg"] is not None:
-                msg_entry["msg"] = msg_entry["msg"].replace("\n", " ")
+            # One line preview for replies, the message itself keeps its newlines
+            preview = plain_text(msg_entry["edited"] or msg_entry["msg"], msg_entry["mentions"])
+            if not preview and (msg_entry["embeds"] or msg_entry["components"] or msg_entry["attachments"]):
+                preview = "Click to see attachment"
+            msg_entry["msg_shoten"] = preview if len(preview) < 32 else preview[:32].strip() + "..."
 
-            messages_map[msg_entry["id"]]["msg_shoten"] = (
-                msg_entry["msg"]
-                if len(msg_entry["msg"] or "...") < 32
-                else msg_entry["msg"][:32].strip() + "..."
-            )
+            if msg_entry["id"] is not None:
+                messages_map[str(msg_entry["id"])] = msg_entry
 
-    def reference_message(msg_id):
-        return messages_map.get(msg_id, None)
+    def reference_message(msg_id: int | str) -> dict | None:
+        """ The message a reply points to, if it's in this ticket """
+        return messages_map.get(str(msg_id))
 
-    def get_author(user_id: int):
+    def get_author(user_id: int | str) -> dict:
+        """ User info from the ticket, or a placeholder for unknown users """
         if str(user_id) not in get_logs["users"]:
             return {
                 "avatar": "/static/images/default.png",
@@ -165,26 +163,28 @@ async def show_ticket(ticket_id):
         status=200, title=f"#{get_logs['channel_name']} | xelA Tickets", submitted_by=data["submitted_by"],
         ticket_id=data["ticket_id"], guild_id=data["guild_id"], author_id=str(data["author_id"]),
         created_at=data["created_at"], confirmed_by=str(data["confirmed_by"]),
-        expires=data["expire"], context=data["context"], official_bot=config["bot_id"],
+        expires=data["expire"], context=data["context"], official_bot=bot_id,
         channel_name=get_logs["channel_name"], valid_source=valid_source, logs=get_logs,
         reference_message=reference_message, str=str, get_author=get_author
     )
 
 
 @app.route("/<ticket_id>/download")
-async def download_ticket(ticket_id):
+async def download_ticket(ticket_id: str):
+    """ The raw ticket JSON, same format as it was submitted """
     ticket_db = tickets.Ticket(db=db)
-    data = ticket_db.fetch_ticket(ticket_id)
+    data = await ticket_db.fetch_ticket(ticket_id)
 
     if not data:
         return jsonify_standard("Not found", f"Ticket {ticket_id} not found", 404)
 
-    return jsonify(json.loads(data["logs"]))
+    return jsonify(data["logs"])
 
 
 @app.route("/submit/example")
 async def submit_example():
-    with open("examples/submit.json", "r") as f:
+    """ Example payload for /submit """
+    with open("examples/submit.json", encoding="utf-8") as f:
         data = json.load(f)
 
     return jsonify(data)
@@ -192,6 +192,7 @@ async def submit_example():
 
 @app.route("/submit", methods=["POST"])
 async def submit():
+    """ Save a ticket, either as a JSON body or an uploaded .json file """
     token = request.headers.get("Authorization") or None
     uploaded_file = False
 
@@ -217,26 +218,26 @@ async def submit():
     if "submitted_by" not in post_data:
         return jsonify_standard("Missing data", "Missing 'submitted_by' in JSON", 400)
 
-    if post_data["submitted_by"] == config["bot_id"]:
+    if str(post_data["submitted_by"]) == bot_id:
         if not token:
             post_data["submitted_by"] = "86477779717066752"  # If a user is uploading the JSON file without changing submitted_by
-        if token and token != config["token"]:
+        if token and token != api_token:
             return jsonify_standard("Invalid token", "Invalid Authorization token...", 403)
 
     make_ticket = tickets.Ticket(payload=post_data, db=db)
-    code, data = make_ticket.attempt_post()
+    result = await make_ticket.attempt_post()
 
-    if code != 200:
-        return jsonify_standard(f"Error: {data.message}", data.validator, code)
+    if not result.ticket_id:
+        return jsonify_standard(result.error, result.description, result.code)
 
     if uploaded_file:
-        return redirect(f"/{data}")
-    else:
-        return jsonify_standard("Success", data, code)
+        return redirect(f"/{result.ticket_id}")
+    return jsonify_standard("Success", result.ticket_id, result.code)
 
 
 if __name__ == "__main__":
     app.run(
-        port=config.get("port", 8080),
-        debug=config.get("debug", False)
+        host=config.get("HOST", "127.0.0.1"),
+        port=config.get("PORT", 8080),
+        debug=config.get("DEBUG", False)
     )

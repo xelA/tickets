@@ -1,9 +1,13 @@
 import time
 import secrets
 import enum
-import json
+import logging
 
-from jsonschema import validate
+from dataclasses import dataclass
+from jsonschema import validate, ValidationError
+from postgreslite import AsyncPoolConnection
+
+_log = logging.getLogger(__name__)
 
 
 class TicketSource(enum.IntEnum):
@@ -12,62 +16,64 @@ class TicketSource(enum.IntEnum):
     approved = 2
 
 
+@dataclass
+class PostResult:
+    """ Outcome of Ticket.attempt_post, ticket_id is only set when it worked """
+
+    code: int
+    ticket_id: str | None = None
+    error: str = ""
+    description: str = ""
+
+
 class Ticket:
-    def __init__(self, payload=None, db=None, expire: int = 86400):
+    def __init__(self, db: AsyncPoolConnection, payload: dict | None = None, expire: int = 86400):
         self.payload = payload
         self.db = db
         self.expire = expire
         self.re_discord_id = "^[0-9]{14,19}$"
 
     @property
-    def generate_id(self):
+    def generate_id(self) -> str:
         """ Generate random ID with Python.secrets """
-        id = secrets.token_urlsafe(10)
-        return id
+        return secrets.token_urlsafe(10)
 
-    def fetch_ticket(self, ticket_id: str):
-        """ Fetch ticket from SQLite database """
-        if not self.db:
-            print("This function needs DB variable")
-
-        data = self.db.fetchrow(
-            "SELECT * FROM tickets WHERE ticket_id=?", (ticket_id,)
+    async def fetch_ticket(self, ticket_id: str) -> dict | None:
+        """ Fetch ticket from the database, logs are decoded from JSON already """
+        return await self.db.fetchrow(
+            "SELECT * FROM tickets WHERE ticket_id = $1", ticket_id
         )
 
-        return data
+    async def attempt_post(self) -> PostResult:
+        """ Attempt to post JSON payload to the database """
+        error = self.validation()
+        if error:
+            return PostResult(400, error=f"Error: {error.message}", description=str(error.validator))
 
-    def attempt_post(self):
-        """ Attempt to post JSON payload to SQLite database """
-        if not self.db or not self.payload:
-            print("This function needs both payload and DB")
-
-        code, output = self.validation()
-        if code != 200:
-            return (code, output)
-
-        query = "INSERT INTO tickets " \
-                "(ticket_id, guild_id, author_id, context, submitted_by, created_at, logs, expire, confirmed_by) " \
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        output: dict = self.payload or {}
 
         right_now = int(time.time())
         ticket_id = self.generate_id
 
         try:
-            self.db.execute(
-                query, (ticket_id, int(output["guild_id"]), int(output["author_id"]), output["context"],
-                int(output["submitted_by"]), int(output["created_at"]), json.dumps(output), right_now + self.expire, int(output["confirmed_by"]))
+            await self.db.execute(
+                """
+                INSERT INTO tickets
+                    (ticket_id, guild_id, author_id, context, submitted_by, created_at, logs, expire, confirmed_by)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                """,
+                ticket_id, int(output["guild_id"]), int(output["author_id"]), output["context"],
+                int(output["submitted_by"]), int(output["created_at"]), output, right_now + self.expire,
+                int(output["confirmed_by"])
             )
-        except Exception as e:
-            print(e)
-            return (500, "Internal server error... contact site owner.")
+        except Exception:
+            _log.exception("Failed to save ticket")
+            return PostResult(500, error="Internal server error", description="Internal server error... contact site owner.")
 
-        return (code, ticket_id)
+        return PostResult(200, ticket_id=ticket_id)
 
-    def validation(self):
+    def validation(self) -> ValidationError | None:
         """ Validate the payload sent to POST """
-        if not self.payload:
-            print("This function needs payload")
-
         json_validation = {
             "definitions": {
                 "content_entry": {
@@ -76,9 +82,25 @@ class Ticket:
                         "msg": {"anyOf": [{"type": "string"}, {"type": "null"}]},
                         "edited": {"anyOf": [{"type": "string"}, {"type": "null"}]},
                         "deleted": {"type": "boolean"},
-                        "content": {"type": "string"}
+                        "content": {"type": "string"},
+                        # Optional, older tickets and other bots don't send them
+                        "embeds": {"anyOf": [
+                            {"type": "array", "maxItems": 10, "items": {"type": "object"}},
+                            {"type": "null"}
+                        ]},
+                        "components": {"anyOf": [
+                            {"type": "array", "maxItems": 40, "items": {"$ref": "#/definitions/component"}},
+                            {"type": "null"}
+                        ]}
                     },
                     "required": ["msg"]
+                },
+
+                # https://discord.com/developers/docs/components/reference
+                "component": {
+                    "type": "object",
+                    "properties": {"type": {"type": "integer", "minimum": 1}},
+                    "required": ["type"]
                 },
 
                 "users_entry": {
@@ -134,7 +156,7 @@ class Ticket:
 
         try:
             validate(self.payload, schema=json_validation)
-        except Exception as e:
-            return (400, e)
+        except ValidationError as e:
+            return e
 
-        return (200, self.payload)
+        return None

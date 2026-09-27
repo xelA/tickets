@@ -1,74 +1,69 @@
+// Image preview, same backdrop and "Open original" link as Discord
 .modal-container {
-  align-items: center;
-  background-color: rgba(0, 0, 0, .8);
-  bottom: 0;
-  display: none;
-  justify-content: center;
-  left: 0;
   position: fixed;
-  right: 0;
-  top: 0;
-  z-index: 99999999999999999999;  // Fuck it, a lot of 9's yes
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, .85);
 
   &.opened {
-    animation: modal1 .2s;
-    animation-fill-mode: forwards;
     display: flex;
+    animation: modal-fade-in .2s forwards;
 
-    .inner {
-      animation: modal2 .2s;
-      animation-fill-mode: forwards;
-    }
+    .inner { animation: modal-zoom-in .2s forwards; }
   }
 
   &.closing {
-    animation: modal3 .2s;
-    animation-fill-mode: forwards;
     display: flex;
-    opacity: 1;
+    animation: modal-fade-out .2s forwards;
 
-    .inner {
-      animation: modal4 .2s;
-      animation-fill-mode: forwards;
-    }
+    .inner { animation: modal-zoom-out .2s forwards; }
   }
 
   .img-enlarge {
     display: flex;
     flex-direction: column;
 
-    img { object-fit: contain; }
+    img {
+      object-fit: contain;
+      max-width: calc(100vw - 80px);
+      max-height: calc(100vh - 120px);
+      border-radius: 8px;
+    }
 
     a {
       align-self: flex-start;
-      color: #fff !important;
-      display: block;
-      flex-grow: 0;
+      margin-top: 6px;
       font-size: 14px;
       font-weight: 500;
       line-height: 30px;
-      opacity: .5;
-      text-decoration: none;
+      color: #fff;
+      opacity: .6;
+      transition: opacity .15s;
+
+      &:hover { opacity: 1; }
     }
   }
 }
 
-@keyframes modal1 {
+@keyframes modal-fade-in {
   from { opacity: .4; }
   to { opacity: 1; }
 }
 
-@keyframes modal2 {
+@keyframes modal-zoom-in {
   from { opacity: 0; transform: scale(.5); }
   to { opacity: 1; transform: scale(1); }
 }
 
-@keyframes modal3 {
+@keyframes modal-fade-out {
   from { opacity: 1; }
   to { opacity: 0; }
 }
 
-@keyframes modal4 {
+@keyframes modal-zoom-out {
   from { opacity: 1; transform: scale(1); }
   to { opacity: 0; transform: scale(.5); }
 }

@@ -1,4 +1,5 @@
 function unix_to_timestamp(e) {
+  if (!e) return
   let unix = parseInt(e.innerText)
   let date = new Date(unix * 1000)
   let months_arr = [
@@ -21,14 +22,26 @@ function unix_to_timestamp(e) {
   return converted_date
 }
 
-function scroll_to(get_id) {
+// Clicking these inside a message does its own thing (enlarge, play, open, reveal), not jump to the message
+const NO_JUMP = "img[data-enlargable], video, audio, a, .spoiler, .spoiler-media, .d-button, .d-select"
+
+function scroll_to(get_id, event) {
+  if (event && event.target.closest(NO_JUMP)) return
   let id = get_id.replace("#", "")
   const el = document.getElementById(id)
+  if (!el) return
   const prev = document.querySelector('.targetted')
   if (prev) prev.classList.remove('targetted')
   el.classList.add('targetted')
   el.scrollIntoView({behavior: 'smooth', inline: "nearest"})
   history.pushState(null, null, `#${id}`)
+}
+
+function toggle_theme() {
+  const root = document.documentElement
+  const theme = root.classList.contains("theme-light") ? "dark" : "light"
+  root.className = `theme-${theme}`
+  try { localStorage.setItem("theme", theme) } catch (e) {}
 }
 
 function toggle_msg(type, target) {
@@ -43,13 +56,59 @@ function toggle_msg(type, target) {
   }
 }
 
+// Spoilers (text and media) are revealed on the first click, that click does nothing else
+document.addEventListener("click", e => {
+  const spoiler = e.target.closest(".spoiler:not(.revealed), .spoiler-media:not(.revealed)")
+  if (!spoiler) return
+  spoiler.classList.add("revealed")
+  e.preventDefault()
+  e.stopPropagation()
+}, true)
+
+// Home page upload: picking or dropping a file uploads it straight away
+function setup_dropzone() {
+  const form = document.getElementById("upload_form")
+  if (!form) return
+  const input = form.querySelector("input[type=file]")
+  const text = form.querySelector(".dropzone-text")
+
+  const upload = () => {
+    if (!input.files.length) return
+    text.textContent = `Uploading ${input.files[0].name}...`
+    form.classList.add("uploading")
+    form.submit()
+  }
+
+  // Coming back with the browser's back button restores the page as it was when it left
+  const idle_text = text.textContent
+  window.addEventListener("pageshow", () => {
+    form.classList.remove("uploading")
+    text.textContent = idle_text
+    input.value = ""
+  })
+
+  input.addEventListener("change", upload)
+  form.addEventListener("dragover", e => { e.preventDefault(); form.classList.add("dragging") })
+  form.addEventListener("dragleave", () => form.classList.remove("dragging"))
+  form.addEventListener("drop", e => {
+    e.preventDefault()
+    form.classList.remove("dragging")
+    if (!e.dataTransfer.files.length) return
+    input.files = e.dataTransfer.files
+    upload()
+  })
+}
+
 window.onload = function() {
+  setup_dropzone()
+
   // Make all timestamps
   unix_to_timestamp(document.getElementById("expire_date"))
   unix_to_timestamp(document.getElementById("created_at"))
 
   // Enlarge images
   const modal = document.getElementById('modal')
+  if (!modal) return
 
   function openModal(type) {
     modal.querySelector(`#${type}`).style.display = null

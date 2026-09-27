@@ -1,4 +1,5 @@
 {% extends "_layout.html" %}
+{% import "_discord.html" as discord %}
 
 {% block meta %}
 {% if status == 200 %}
@@ -12,53 +13,76 @@
 {% block content %}
 {% if status == 200 %}
 <!-- {{ official_bot }} -->
-<main class="discord-logs">
-  {% if valid_source == 0 %}
-  <div class="unknown_source">
-    <p><b>Note:</b> This log was not submitted by xelA, there's a chance something might be altered...</p>
+<header class="page-header">
+  <div class="text">
+    <h2 class="title"><span class="hash" aria-hidden="true">#</span>{{ channel_name }}</h2>
+    <div class="subtitle">Expires <span id="expire_date">{{ expires }}</span></div>
   </div>
-  {% endif %}
-  <section class="channel-title">
-    <svg width="24" height="24" viewBox="0 0 24 24" class="icon"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.88657 21C5.57547 21 5.3399 20.7189 5.39427 20.4126L6.00001 17H2.59511C2.28449 17 2.04905 16.7198 2.10259 16.4138L2.27759 15.4138C2.31946 15.1746 2.52722 15 2.77011 15H6.35001L7.41001 9H4.00511C3.69449 9 3.45905 8.71977 3.51259 8.41381L3.68759 7.41381C3.72946 7.17456 3.93722 7 4.18011 7H7.76001L8.39677 3.41262C8.43914 3.17391 8.64664 3 8.88907 3H9.87344C10.1845 3 10.4201 3.28107 10.3657 3.58738L9.76001 7H15.76L16.3968 3.41262C16.4391 3.17391 16.6466 3 16.8891 3H17.8734C18.1845 3 18.4201 3.28107 18.3657 3.58738L17.76 7H21.1649C21.4755 7 21.711 7.28023 21.6574 7.58619L21.4824 8.58619C21.4406 8.82544 21.2328 9 20.9899 9H17.41L16.35 15H19.7549C20.0655 15 20.301 15.2802 20.2474 15.5862L20.0724 16.5862C20.0306 16.8254 19.8228 17 19.5799 17H16L15.3632 20.5874C15.3209 20.8261 15.1134 21 14.8709 21H13.8866C13.5755 21 13.3399 20.7189 13.3943 20.4126L14 17H8.00001L7.36325 20.5874C7.32088 20.8261 7.11337 21 6.87094 21H5.88657ZM9.41045 9L8.35045 15H14.3504L15.4104 9H9.41045Z"></path></svg>
-    <div class="channel-content">
-      <p class="name">{{ channel_name }}</p>
-      <p class="expire">(Expires: <span id="expire_date">{{ expires }}</span>)</p>
-    </div>
-    <div class="download tooltip left" data-tooltip="Download">
-      <a href="/{{ ticket_id }}/download" download="{{ channel_name }}_{{ ticket_id }}.json"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/><path d="M0 0h24v24H0z" fill="none"/></svg></a>
-    </div>
-  </section>
-  <section class="context-container">
-    <div class="context">
-      <p class="author"><b>Ticket author:</b> {% if logs.users[author_id] %}{{ logs.users[author_id].username }}{% else %}{{ author_id }}{% endif %}</p>
-      <p class="created_at"><b>Ticket created:</b> <span id="created_at">{{ created_at }}</span></p>
-      <p class="confirmed_author"><b>Responsible staff:</b> {% if logs.users[confirmed_by] %}{{ logs.users[confirmed_by].username }}{% else %}{{ confirmed_by }}{% endif %}</p>
-      <div class="msg-options">
-        <label><input type="checkbox" id="edited" onclick="toggle_msg('edited', 'edited-content')"/> Show edited messages</label>
-      </div>
-    </div>
-  </section>
-  <section class="messages">
-    <div class="message author_context">
-      <img class="avatar" src="{% if logs.users[author_id] %}{{ logs.users[author_id].avatar }}{% endif %}" onerror="this.src='{{ url_for('static', filename='images/default.png') }}'">
-      <h2 class="username">
-        {% if logs.users[author_id] %}{{ logs.users[author_id].username }}{% else %}{{ author_id }}{% endif %}
+  <div class="actions">
+    <label class="checkbox"><input type="checkbox" id="edited" onclick="toggle_msg('edited', 'edited-content')"/> Show edited messages</label>
+    <a class="button small grey" href="/{{ ticket_id }}/download" download="{{ channel_name }}_{{ ticket_id }}.json">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+      Download JSON
+    </a>
+  </div>
+</header>
+
+{% if valid_source == 0 %}
+<div class="card red unknown-source">
+  <h4 class="card-title">Unverified log</h4>
+  <p class="card-desc">This log was not submitted by xelA, so there's a chance something in it was altered.</p>
+</div>
+{% endif %}
+
+<section class="ticket-details">
+  <div class="card">
+    <h4 class="card-title">Ticket author</h4>
+    <p class="card-desc">{% if logs.users[author_id] %}{{ logs.users[author_id].username }}{% else %}{{ author_id }}{% endif %}</p>
+  </div>
+  <div class="card">
+    <h4 class="card-title">Ticket created</h4>
+    <p class="card-desc" id="created_at">{{ created_at }}</p>
+  </div>
+  <div class="card">
+    <h4 class="card-title">Responsible staff</h4>
+    <p class="card-desc">{% if logs.users[confirmed_by] %}{{ logs.users[confirmed_by].username }}{% else %}{{ confirmed_by }}{% endif %}</p>
+  </div>
+</section>
+
+<section class="messages">
+  <div class="message author_context">
+    <img class="avatar" src="{% if logs.users[author_id] %}{{ logs.users[author_id].avatar }}{% endif %}" onerror="this.src='{{ url_for('static', filename='images/default.png') }}'" alt="">
+    <div class="body">
+      <h2 class="meta">
+        <span class="name">{% if logs.users[author_id] %}{{ logs.users[author_id].username }}{% else %}{{ author_id }}{% endif %}</span>
         <span class="tag context">Ticket context</span>
       </h2>
       <div class="content-container">
-        <span class="content"><p>{{ context | safe | markdown }}</p></span>
+        <div class="content">{{ context | markdown }}</div>
       </div>
     </div>
-    {% for g in logs.messages %}
-      {% set auth_count = loop.index %}
-      {% if g.content[0].msg != context %}
-        <div class="message {% if g.author == official_bot %}system{% endif %}">
-          <img
-            class="avatar" src="{{ logs.users[g.author].avatar }}"
-            onerror="this.src='{{ url_for('static', filename='images/default.png') }}'"
-          >
-          <h2 class="username">
-            {{ logs.users[g.author].username }}
+  </div>
+  {% for g in logs.messages %}
+    {% set auth_count = loop.index %}
+    {% if g.content[0].msg != context %}
+      {% set first = g.content[0] %}
+      {% set ref_msg = reference_message(first.reply) if first.reply else None %}
+      <div class="message {% if g.author == official_bot %}system{% endif %} {% if ref_msg %}with-reply{% endif %}">
+        {% if ref_msg %}
+          {% set ref_user = get_author(ref_msg.author) %}
+          <div class="ref-content" onclick="scroll_to('{{ ref_msg.href_id }}')">
+            <img class="ref-avatar" src="{{ ref_user.avatar }}" alt="" onerror="this.src='{{ url_for('static', filename='images/default.png') }}'">
+            <span class="ref-username">{{ ref_user.username }}</span>
+            <p>{{ ref_msg.msg_shoten }}</p>
+          </div>
+        {% endif %}
+        <img
+          class="avatar" src="{{ logs.users[g.author].avatar }}" alt=""
+          onerror="this.src='{{ url_for('static', filename='images/default.png') }}'"
+        >
+        <div class="body">
+          <h2 class="meta">
+            <span class="name">{{ logs.users[g.author].username }}</span>
             {% if logs.users[g.author]['badge'] %}
               <span class="tag staff">Staff</span>
             {% elif logs.users[g.author]['bot'] %}
@@ -72,93 +96,76 @@
               {% set msg_to_send = content.msg %}
 
               {% set href_id = "message-" + str(auth_count) + "-" + str(cont_count) %}
-              <span
-                class="content {% if content.edited %}edited{% endif %}{% if content.deleted %}deleted{% endif %}{% if content.reply %}has_reply{% endif %}"
+              <div
+                class="content {% if content.edited %}edited{% endif %} {% if content.deleted %}deleted{% endif %}"
                 id="{{ href_id }}"
               >
-                {% if content.reply %}
-                  {% set ref_msg = reference_message(content.reply) %}
-                  {% if ref_msg %}
-                    {% set ref_user = get_author(ref_msg.author) %}
-                    <span class="ref-content" onclick="scroll_to('{{ ref_msg.href_id }}')">
-                      <img class="ref-avatar" src="{{ ref_user.avatar }}">
-                      <div class="ref-username">{{ ref_user.username }}</div>
-                      <p>{{ ref_msg.msg_shoten | safe }}</p>
-                    </span>
-                  {% endif %}
-                {% endif %}
 
-                <div class="main-content" onclick="scroll_to('{{ href_id }}')">
+                <div class="main-content" onclick="scroll_to('{{ href_id }}', event)">
 
                   {% if content.edited %}
                     {% set msg_to_send = content.edited %}
-                    <div class="edited-content tooltop hide" data-tooltip="test">
-                      {{ content.msg | safe | markdown }}
+                    <div class="edited-content hide">
+                      {{ content.msg | markdown(content.mentions) }}
                     </div>
                   {% endif %}
 
                   {% if content.deleted %}
                     <div class="deleted-content tooltip" data-tooltip="This message was deleted...">
-                      {{ msg_to_send | safe | markdown }}
+                      {{ msg_to_send | markdown(content.mentions) }}
                     </div>
-                  {% elif content.msg %}
-                    {{ msg_to_send | safe | markdown }}
+                  {% elif msg_to_send %}
+                    {{ msg_to_send | markdown(content.mentions) }}
                   {% endif %}
 
                   {% if content.attachments %}
                     {% for file in content.attachments %}
-                      {{ file | detect_file | safe }}
+                      {{ file | detect_file }}
                     {% endfor %}
                   {% endif %}
+
+                  {{ discord.embeds(content.embeds, content.mentions) }}
+                  {{ discord.components(content.components, content.mentions) }}
 
                   {% if content.stickers %}
                     <div class="stickers-container">
                       {% for sticker in content.stickers %}
-                        <div class="sticker"><img src="{{ sticker }}"></div>
+                        <div class="sticker"><img src="{{ sticker }}" alt=""></div>
                       {% endfor %}
                     </div>
                   {% endif %}
 
                 </div>
 
-              </span>
+              </div>
             {% endfor %}
           </div>
         </div>
-      {% endif %}
-    {% endfor %}
-  </section>
+      </div>
+    {% endif %}
+  {% endfor %}
+</section>
 
-  <div id='modal' class='modal-container'>
-    <div class='inner img-enlarge' id='enlarge' style='display: none'>
-      <img src='' alt=''/>
-      <a href='' target='_blank'>Open Original</a>
-    </div>
+<div class="closed-ticket" role="separator"><span>Ticket closed</span></div>
+
+<div id="modal" class="modal-container">
+  <div class="inner img-enlarge" id="enlarge" style="display: none">
+    <img src="" alt=""/>
+    <a href="" target="_blank">Open original</a>
   </div>
-
-  <h3 class="closed-ticket">Ticket closed...</h3>
-</main>
+</div>
 
 {% else %}
-<div class="nothing-found">
-  <h2>
-    Nothing found on <b class="code">{{ code | e }}</b>...<br>
-    Either ticket_url does not exist or it has expired 🍉
-  </h2>
+<div class="error-page">
+  <img src="{{ url_for('static', filename='images/alex_sip.png') }}" alt="">
+  <div>
+    <h2>404, nothing found</h2>
+    <p>No ticket with the code <code>{{ code | e }}</code>. Either it never existed or it has expired 🍉</p>
+    <div class="actions">
+      <a class="button" href="/">Home</a>
+      <button class="button grey" type="button" onclick="history.back()">One step back</button>
+    </div>
+  </div>
 </div>
 {% endif %}
-{% endblock %}
-
-{% block script %}
-<script>
-  // Make normal emojis jumbo too
-  let find_contents = document.getElementsByClassName("content")
-  for (var g = 0; g < find_contents.length; g++) {
-    let find_p = find_contents[g].getElementsByTagName("p")
-    if (find_p.length == 0) { continue }
-
-    let new_text = find_p[0].innerText.replace(" ", "")
-    let get_img = find_contents[g].getElementsByTagName("img")
-  }
-</script>
 {% endblock %}

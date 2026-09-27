@@ -9,6 +9,7 @@ __pycache__/
 config.json
 tokens.json
 *.db
+*.db*
 examples/ticket-*
 !examples/submit.json
 uv.lock

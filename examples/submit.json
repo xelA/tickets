@@ -23,20 +23,36 @@
       "author": "420420420420420420",
       "timestamp": 1582737777,
       "content": [
-        {"msg": "How can I hellp you?", "edited": false, "deleted": false},
-        {"msg": "How can I help you?", "edited": true, "deleted": false}
+        {
+          "msg": "How can I hellp you?",
+          "edited": false,
+          "deleted": false
+        },
+        {
+          "msg": "How can I help you?",
+          "edited": true,
+          "deleted": false
+        }
       ]
     },
     {
       "author": "696969696969696969",
       "timestamp": 1582737790,
       "content": [
-        {"msg": "This guy is being a bully...", "edited": false, "deleted": false},
+        {
+          "msg": "This guy is being a bully...",
+          "edited": false,
+          "deleted": false
+        },
         {
           "msg": "proof:",
-          "edited": false, "deleted": false,
+          "edited": false,
+          "deleted": false,
           "attachments": [
-            {"filename": "proof.png", "content": "https://i.alexflipnote.dev/6CaT4JJ.png"}
+            {
+              "filename": "proof.png",
+              "content": "https://i.alexflipnote.dev/6CaT4JJ.png"
+            }
           ]
         }
       ]
@@ -45,7 +61,44 @@
       "author": "420420420420420420",
       "timestamp": 1582737777,
       "content": [
-        {"msg": "I'll have a look to it...", "edited": false, "deleted": false}
+        {
+          "msg": "I'll have a look to it...",
+          "edited": false,
+          "deleted": false,
+          "embeds": [
+            {
+              "title": "Report received",
+              "description": "A staff member will look at it soon.",
+              "color": 1358564,
+              "fields": [
+                {
+                  "name": "Status",
+                  "value": "Open",
+                  "inline": true
+                }
+              ],
+              "footer": {
+                "text": "Optional, Discord embed objects"
+              }
+            }
+          ],
+          "components": [
+            {
+              "type": 1,
+              "components": [
+                {
+                  "type": 2,
+                  "style": 2,
+                  "label": "Close",
+                  "custom_id": "ticket:close",
+                  "emoji": {
+                    "name": "🔒"
+                  }
+                }
+              ]
+            }
+          ]
+        }
       ]
     }
   ]

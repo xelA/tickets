@@ -1,6 +1,0 @@
-{
-  "token": "InsertNiceTokenYouDontShareHere",
-  "bot_id": "YourBotID",
-  "sanic_workers": 8,
-  "port": 8000
-}

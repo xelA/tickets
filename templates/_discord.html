@@ -1,0 +1,205 @@
+{#
+  Embeds and message components, drawn like the Discord client.
+  Data comes from utils/discord_objects.py, so every value here is already checked.
+#}
+
+{% macro emoji(e) -%}
+  {%- if e.url -%}<img class="emoji" src="{{ e.url }}" alt=":{{ e.name }}:" draggable="false">{%- else -%}<span class="emoji-text">{{ e.name }}</span>{%- endif -%}
+{%- endmacro %}
+
+{% macro media(m, class_name, enlargable=True) -%}
+  {%- if m.is_video -%}
+    <video class="{{ class_name }}" src="{{ m.url }}" controls preload="metadata"></video>
+  {%- else -%}
+    <img class="{{ class_name }}" src="{{ m.url }}" alt="{{ m.description or '' }}" loading="lazy" {% if enlargable %}data-enlargable{% endif %}>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro embed(e, mentions) %}
+  {% if e.media_only %}
+    <div class="embed-media-only">{{ media(e.media_only, "embed-media") }}</div>
+  {% else %}
+    <article class="embed" {% if e.colour %}style="--embed-colour: {{ e.colour }}"{% endif %}>
+      <div class="embed-grid {% if e.thumbnail %}has-thumbnail{% endif %}">
+        {% if e.provider %}
+          <div class="embed-provider">
+            {% if e.provider.url %}<a href="{{ e.provider.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ e.provider.name }}</a>{% else %}{{ e.provider.name }}{% endif %}
+          </div>
+        {% endif %}
+
+        {% if e.author %}
+          <div class="embed-author">
+            {% if e.author.icon_url %}<img class="embed-author-icon" src="{{ e.author.icon_url }}" alt="">{% endif %}
+            {% if e.author.url %}
+              <a href="{{ e.author.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ e.author.name }}</a>
+            {% else %}
+              <span>{{ e.author.name }}</span>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        {% if e.title %}
+          <div class="embed-title">
+            {% if e.url %}
+              <a href="{{ e.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ e.title | markdown(mentions) }}</a>
+            {% else %}
+              {{ e.title | markdown(mentions) }}
+            {% endif %}
+          </div>
+        {% endif %}
+
+        {% if e.description %}
+          <div class="embed-description">{{ e.description | markdown(mentions) }}</div>
+        {% endif %}
+
+        {% if e.field_rows %}
+          <div class="embed-fields">
+            {% for row in e.field_rows %}
+              <div class="embed-field-row" style="--columns: {{ row | length }}">
+                {% for field in row %}
+                  <div class="embed-field">
+                    {% if field.name %}<div class="embed-field-name">{{ field.name | markdown(mentions) }}</div>{% endif %}
+                    {% if field.value %}<div class="embed-field-value">{{ field.value | markdown(mentions) }}</div>{% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if e.video and e.type == "video" %}
+          <div class="embed-image">
+            {% if e.video.is_video %}
+              {{ media(e.video, "embed-media") }}
+            {% elif e.thumbnail %}
+              <a href="{{ e.url or e.video.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ media(e.thumbnail, "embed-media", enlargable=False) }}</a>
+            {% endif %}
+          </div>
+        {% elif e.image %}
+          <div class="embed-image">{{ media(e.image, "embed-media") }}</div>
+        {% endif %}
+
+        {% if e.thumbnail and not (e.video and e.type == "video") %}
+          <div class="embed-thumbnail">{{ media(e.thumbnail, "embed-thumbnail-media") }}</div>
+        {% endif %}
+
+        {% if e.footer or e.timestamp %}
+          <div class="embed-footer">
+            {% if e.footer and e.footer.icon_url %}<img class="embed-footer-icon" src="{{ e.footer.icon_url }}" alt="">{% endif %}
+            <span>
+              {% if e.footer %}{{ e.footer.text }}{% endif %}
+              {% if e.footer and e.timestamp %}<span class="embed-footer-dot">•</span>{% endif %}
+              {% if e.timestamp %}{{ e.timestamp }}{% endif %}
+            </span>
+          </div>
+        {% endif %}
+      </div>
+    </article>
+  {% endif %}
+{% endmacro %}
+
+{% macro button(b) %}
+  {% set inner %}
+    {% if b.emoji %}{{ emoji(b.emoji) }}{% endif %}
+    {% if b.label %}<span class="label">{{ b.label }}</span>{% endif %}
+    {% if b.style == "link" %}
+      <svg class="external" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5V3H5.375C4.06519 3 3 4.06519 3 5.375V18.625C3 19.936 4.06519 21 5.375 21H18.625C19.936 21 21 19.936 21 18.625V14H19V19H5V5H10Z"/><path d="M21 2.99902H14V4.99902H17.586L9.29297 13.292L10.707 14.706L19 6.41302V9.99902H21V2.99902Z"/></svg>
+    {% elif b.style == "premium" %}
+      <svg class="external" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 7h-2.2A5 5 0 0 0 12 2a5 5 0 0 0-4.8 5H5a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1Zm-7-3a3 3 0 0 1 2.8 3H9.2A3 3 0 0 1 12 4Z"/></svg>
+    {% endif %}
+  {% endset %}
+  {% if b.url and not b.disabled %}
+    <a class="d-button {{ b.style }}" href="{{ b.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ inner }}</a>
+  {% else %}
+    <span class="d-button {{ b.style }} {% if b.disabled %}disabled{% endif %}" aria-disabled="true">{{ inner }}</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro select(s) %}
+  <div class="d-select {% if s.disabled %}disabled{% endif %}">
+    <span class="d-select-value">
+      {% if s.selected %}
+        {% for option in s.selected %}
+          <span class="d-select-option">{% if option.emoji %}{{ emoji(option.emoji) }}{% endif %}{{ option.label }}</span>{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      {% else %}
+        <span class="d-select-placeholder">{{ s.placeholder }}</span>
+      {% endif %}
+    </span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.3 9.3a1 1 0 0 1 1.4 0l5.3 5.29 5.3-5.3a1 1 0 1 1 1.4 1.42l-6 6a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1 0-1.42Z"/></svg>
+  </div>
+{% endmacro %}
+
+{% macro component(c, mentions) %}
+  {% if c.type == 1 %}
+    <div class="d-action-row">
+      {% for child in c.components %}
+        {% if child.type == 2 %}{{ button(child) }}{% else %}{{ select(child) }}{% endif %}
+      {% endfor %}
+    </div>
+
+  {% elif c.type == 9 %}
+    <div class="d-section">
+      <div class="d-section-content">
+        {% for child in c.components %}{{ component(child, mentions) }}{% endfor %}
+      </div>
+      {% if c.accessory %}
+        <div class="d-section-accessory">
+          {% if c.accessory.type == 2 %}{{ button(c.accessory) }}{% else %}{{ component(c.accessory, mentions) }}{% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+  {% elif c.type == 10 %}
+    <div class="d-text">{{ c.content | markdown(mentions) }}</div>
+
+  {% elif c.type == 11 %}
+    <div class="d-thumbnail {% if c.spoiler %}spoiler-media{% endif %}">
+      <img src="{{ c.url }}" alt="{{ c.description or '' }}" loading="lazy" data-enlargable>
+    </div>
+
+  {% elif c.type == 12 %}
+    <div class="d-gallery count-{{ c['items'] | length }}">
+      {% for item in c['items'] %}
+        <div class="d-gallery-item {% if item.spoiler %}spoiler-media{% endif %}">{{ media(item, "d-gallery-media") }}</div>
+      {% endfor %}
+    </div>
+
+  {% elif c.type == 13 %}
+    <div class="d-file {% if c.spoiler %}spoiler-media{% endif %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6Zm7 1.5L18.5 9H13V3.5Z"/></svg>
+      <div class="d-file-text">
+        {% if c.url %}
+          <a href="{{ c.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ c.name }}</a>
+        {% else %}
+          <span class="d-file-name">{{ c.name }}</span>
+        {% endif %}
+        {% if c.size %}<span class="d-file-size">{{ c.size }}</span>{% endif %}
+      </div>
+    </div>
+
+  {% elif c.type == 14 %}
+    <div class="d-separator spacing-{{ c.spacing }} {% if c.divider %}divider{% endif %}" role="separator"></div>
+
+  {% elif c.type == 17 %}
+    <div class="d-container {% if c.spoiler %}spoiler-media{% endif %}" {% if c.accent %}style="--accent: {{ c.accent }}"{% endif %}>
+      {% for child in c.components %}{{ component(child, mentions) }}{% endfor %}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro components(list, mentions) %}
+  {% if list %}
+    <div class="d-components">
+      {% for c in list %}{{ component(c, mentions) }}{% endfor %}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro embeds(list, mentions) %}
+  {% if list %}
+    <div class="embeds">
+      {% for e in list %}{{ embed(e, mentions) }}{% endfor %}
+    </div>
+  {% endif %}
+{% endmacro %}

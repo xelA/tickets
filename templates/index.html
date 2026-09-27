@@ -8,18 +8,40 @@
 {% endblock %}
 
 {% block content %}
-<section class="intro-container">
-  <h1 class="title">TicketsAPI Docs</h1>
-  <p class="text">POST: <code>https://tickets.xela.dev/submit</code></p>
-  <p class="text">Headers (optional): <code>Authorization: &lt;token&gt;</code></p>
-  <p class="text">
-    JSON/data: <a href="/submit/example" target="_blank">example</a>
-  </p>
-  <div class="line-splitter"></div>
-  <h3 class="title">...or upload JSON logs</h3>
-  <form action="/submit" method="post" enctype="multipart/form-data">
-    <input type="file" id="ticket_file" name="ticket_file" accept=".json">
-    <input type="submit" name="submit">
-  </form>
-</section>
+<header class="page-header">
+  <div class="icon"><img src="{{ url_for('static', filename='images/favicon.png') }}" alt=""></div>
+  <div class="text">
+    <h2 class="title">TicketsAPI</h2>
+    <div class="subtitle">Ticket logs from xelA, rendered the way they looked in Discord. Logs expire and are deleted automatically.</div>
+  </div>
+</header>
+
+<h3 class="category-label">View a downloaded ticket</h3>
+<form class="dropzone" id="upload_form" action="/submit" method="post" enctype="multipart/form-data">
+  <label class="dropzone-area" for="ticket_file">
+    <svg class="dropzone-icon" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/><path d="M13 3v4a2 2 0 0 0 2 2"/><path d="M9 13h6M9 17h4"/><path d="M19 7V1.5M16.5 4 19 1.5 21.5 4"/></g></svg>
+    <span class="dropzone-text">Drop a ticket JSON here or click...</span>
+    <span class="dropzone-hint">Typically you find them in an archive channel in your server or the show command.</span>
+  </label>
+  <input type="file" id="ticket_file" name="ticket_file" accept=".json,application/json" hidden>
+</form>
+
+<h3 class="category-label">Submit through the API</h3>
+<div class="card brand api-docs">
+  <div class="api-field">
+    <h4 class="card-title">Endpoint</h4>
+    <p class="card-desc"><code>POST https://tickets.xela.dev/submit</code></p>
+  </div>
+  <div class="api-field">
+    <h4 class="card-title">Headers (optional)</h4>
+    <p class="card-desc"><code>Authorization: &lt;token&gt;</code></p>
+  </div>
+  <div class="api-field">
+    <h4 class="card-title">JSON body</h4>
+    <p class="card-desc">The ticket log, see the example for every field. <code>embeds</code> and <code>components</code> are optional.</p>
+  </div>
+  <div class="card-actions">
+    <a class="button small grey" href="/submit/example" target="_blank">View example</a>
+  </div>
+</div>
 {% endblock %}

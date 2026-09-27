@@ -1,6 +1,10 @@
 @use 'components/global';
-@use 'components/messages';
-@use 'components/modal';
-@use 'components/responsive';
+@use 'components/navbar';
+@use 'components/page';
 @use 'components/title';
+@use 'components/messages';
+@use 'components/markdown';
+@use 'components/embeds';
+@use 'components/modal';
 @use 'components/tooltip';
+@use 'components/responsive';

@@ -1,0 +1,328 @@
+@use 'sass:color';
+@use 'vars';
+
+// Shared page building blocks from the dashboard (xelADashboard/src/_page.scss):
+// headers are channel headers, surfaces are embeds, buttons are Discord buttons.
+
+// Channel header: "# title" with the subtitle as its topic
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  box-shadow: 0 1px 0 var(--hairline), 0 2px 0 rgba(0, 0, 0, .12);
+
+  .icon {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    overflow-wrap: anywhere;
+  }
+
+  .hash {
+    margin-right: 8px;
+    font-weight: 500;
+    color: var(--text-faint);
+  }
+
+  .subtitle {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+}
+
+.theme-light .page-header { box-shadow: 0 1px 0 var(--hairline); }
+
+// Discord embed: solid body with a coloured bar on the left, set --bar to recolour it
+.card {
+  padding: 20px;
+  border-radius: 4px;
+  background-color: var(--bg-card);
+  border-left: 4px solid var(--bar);
+  box-shadow: var(--card-shadow);
+
+  &.green { --bar: #{vars.$green}; }
+  &.yellow { --bar: #{vars.$yellow}; }
+  &.red { --bar: #{vars.$red}; }
+  &.brand { --bar: #{vars.$primary}; }
+
+  .card-title {
+    font-family: vars.$font-body;
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: var(--text-strong);
+  }
+
+  .card-desc {
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 0;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+// Heading above a group of cards, like a Discord channel category (chevron + caps)
+.category-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: vars.$font-body;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  margin: 0 0 12px;
+  color: var(--text-muted);
+
+  &::before {
+    content: '';
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    margin: 0 4px 3px 2px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+  }
+}
+
+// Buttons, filled brand by default, .grey is Discord's secondary button
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  min-width: 96px;
+  padding: 2px 16px;
+  border: none;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color .2s ease;
+  background-color: vars.$primary;
+  color: vars.$dark-highlight;
+
+  &:hover {
+    background-color: color.adjust(vars.$primary, $lightness: -5%);
+    text-decoration: none;
+  }
+
+  &.small {
+    height: 32px;
+    min-width: 60px;
+    padding: 2px 12px;
+    font-size: 13px;
+  }
+
+  &.grey {
+    background-color: vars.$secondary-btn;
+    color: #fff;
+
+    &:hover { background-color: color.adjust(vars.$secondary-btn, $lightness: 8%); }
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+}
+
+.theme-light .button.grey {
+  background-color: #6d6f78;
+
+  &:hover { background-color: color.adjust(#6d6f78, $lightness: -8%); }
+}
+
+// Checkbox from the dashboard form items
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    appearance: none;
+    position: relative;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    border-radius: 3px;
+    border: 3px solid #5d5d5d;
+    cursor: pointer;
+    transition: border-color .2s, background-color .2s;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 12px;
+      height: 6px;
+      opacity: 0;
+      transform: rotate(-45deg);
+      border-left: 3px solid #fff;
+      border-bottom: 3px solid #fff;
+      transition: opacity .2s;
+    }
+
+    &:checked {
+      border-color: vars.$primary;
+      background-color: vars.$primary;
+
+      &::after { opacity: 1; }
+    }
+
+    &:focus-visible { outline: 2px solid vars.$primary; outline-offset: 2px; }
+  }
+}
+
+.theme-light .checkbox input { border-color: vars.$gray-light; }
+
+// Upload drop area on the home page, click or drop a file and it uploads right away (script.js)
+.dropzone {
+  margin-bottom: 32px;
+}
+
+.dropzone-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 220px;
+  padding: 24px;
+  border: 3px dashed var(--text-faint);
+  border-radius: 16px;
+  color: var(--text-muted);
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color .15s, background-color .15s, color .15s;
+
+  &:hover, .dropzone.dragging & {
+    border-color: vars.$primary;
+    background-color: rgba(vars.$primary, .06);
+    color: vars.$primary;
+  }
+
+  .dropzone.uploading & {
+    cursor: progress;
+    opacity: .6;
+  }
+}
+
+.dropzone-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.dropzone-text {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.dropzone-hint { font-size: 13px; }
+
+// All of the API docs in one embed, laid out like embed fields
+.api-docs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px 24px;
+  margin-bottom: 32px;
+
+  .card-actions {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+}
+
+// Error page (404), image next to a text column
+.error-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  padding: 80px 0 40px;
+
+  > img {
+    flex-shrink: 0;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+  }
+
+  > div { max-width: 500px; }
+
+  h2 {
+    font-size: 36px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+
+  p {
+    font-size: 21px;
+    margin: 0 0 16px;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+}

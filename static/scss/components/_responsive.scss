@@ -1,5 +1,71 @@
-@media screen and (max-width: 520px) {
-  .messages .message .content-container .content {
-    .upload, .music-container audio { width: 100%; }
+@use 'vars';
+
+@media screen and (max-width: 800px) {
+  .container {
+    padding: 20px 20px 48px;
+  }
+
+  .navbar .links { display: none; }
+
+  .ticket-details { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media screen and (max-width: 600px) {
+  .navbar {
+    height: 64px;
+    padding: 0 12px 0 10px;
+
+    .brand {
+      img { width: 44px; height: 44px; margin-right: 10px; }
+      h1 { font-size: 24px; }
+    }
+  }
+
+  .page-header {
+    flex-wrap: wrap;
+
+    .icon { width: 64px; height: 64px; }
+    .actions { width: 100%; }
+  }
+
+  .dropzone-area { min-height: 180px; }
+
+  .error-page {
+    flex-direction: column;
+    gap: 24px;
+    padding-top: 40px;
+    text-align: center;
+
+    .actions { justify-content: center; }
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  // Smaller avatars on phones, like the dashboard chat
+  .message {
+    grid-template-columns: 32px minmax(0, 1fr);
+    column-gap: 12px;
+
+    .avatar { width: 32px; height: 32px; }
+  }
+
+  .content-container .content {
+    margin-left: -60px;
+    padding-left: 60px;
+
+    &.edited::before { left: 46px; }
+  }
+
+  .ref-content::before {
+    left: -28px;
+    width: 22px;
+  }
+
+  .content-container .content .sticker img {
+    width: 120px;
+    height: 120px;
   }
 }

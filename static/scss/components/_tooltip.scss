@@ -1,56 +1,58 @@
-$cubic: cubic-bezier(.64, .09, .08, 1);
+@use 'sass:color';
 
+$tooltip-bg: color.adjust(#000, $lightness: 3%);
+
+// CSS only version of the dashboard tooltip: near black bubble with an arrow
 .tooltip {
-  display: inline;
   position: relative;
 
-  &::after {
-    background: #282828;
-    border-radius: 2px;
-    color: #fff;
-    content: attr(data-tooltip);
-    left: 50%;
-    opacity: 0;
-    padding: 6px 10px;
+  &::after, &::before {
     position: absolute;
-    top: 1.6em;
-    transform: translateX(-50%) translateY(-2px);
-    transition: opacity .2s $cubic, transform .2s $cubic;
+    left: 50%;
+    z-index: 200;
+    opacity: 0;
     visibility: hidden;
+    pointer-events: none;
+    transition: opacity .15s ease, transform .15s ease;
+  }
+
+  &::after {
+    content: attr(data-tooltip);
+    top: calc(100% + 9px);
+    padding: 8px 10px;
+    border-radius: 6px;
+    background-color: $tooltip-bg;
+    box-shadow: 0 0 8px rgba($tooltip-bg, .3);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
     white-space: nowrap;
-    z-index: 2;
+    transform: translateX(-50%) scale(.9);
   }
 
-  &:hover {
-    &::after {
-      display: block;
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-      visibility: visible;
-    }
+  &::before {
+    content: '';
+    top: calc(100% + 4px);
+    border: 5px solid transparent;
+    border-top: 0;
+    border-bottom-color: $tooltip-bg;
+    transform: translateX(-50%);
   }
 
-  &.left {
-    &::after {
-      left: 0;
-      top: 0;
-      transform: translateX(-112%) translateY(0);
-    }
-
-    &:hover {
-      &::after { transform: translateX(-110%) translateY(0); }
-    }
+  &:hover::after, &:hover::before {
+    opacity: 1;
+    visibility: visible;
   }
 
-  &.right {
-    &::after {
-      left: 100%;
-      top: 0;
-      transform: translateX(12%) translateY(0);
-    }
+  &:hover::after { transform: translateX(-50%) scale(1); }
 
-    &:hover {
-      &::after { transform: translateX(10%) translateY(0); }
-    }
+  // Anchored to the right edge so it never leaves the screen
+  &.left::after {
+    left: auto;
+    right: 0;
+    transform: scale(.9);
   }
+
+  &.left:hover::after { transform: scale(1); }
 }

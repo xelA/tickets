@@ -1,0 +1,115 @@
+@use 'vars';
+
+// Frosted glass navbar from the dashboard, content scrolls underneath it blurred
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  height: vars.$navbar-height;
+  padding: 0 25px 0 15px;
+  user-select: none;
+  background-color: var(--nav-bg);
+  box-shadow: var(--nav-shadow);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+
+  .brand {
+    display: flex;
+    align-items: center;
+    color: var(--text);
+
+    &:hover { text-decoration: none; }
+
+    img {
+      height: 60px;
+      width: 60px;
+      margin-right: 15px;
+      border-radius: 10px;
+    }
+
+    h1 {
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    span {
+      color: vars.$primary;
+    }
+  }
+
+  .links {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    margin-left: 25px;
+
+    a {
+      display: flex;
+      align-items: center;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .external-icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      margin-left: 6px;
+      opacity: .7;
+    }
+
+    // Diamond separators between links, same as the dashboard
+    a + a {
+      margin-left: 10px;
+
+      &::before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        margin-right: 10px;
+        border-radius: 3px;
+        transform: rotate(45deg);
+        background-color: vars.$dark-secondary;
+      }
+    }
+  }
+
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin-left: auto;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background-color .15s;
+
+    &:hover { background-color: var(--bg-hover); }
+
+    svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    // Show the icon of the theme you would switch to
+    .icon-sun { display: block; }
+    .icon-moon { display: none; }
+  }
+}
+
+.theme-light .navbar {
+  .links a + a::before { background-color: vars.$gray-light; }
+
+  .theme-toggle {
+    .icon-sun { display: none; }
+    .icon-moon { display: block; }
+  }
+}

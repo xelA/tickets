@@ -1,85 +1,217 @@
-html, body {
-  background: #303030;
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-  margin: 0 auto;
-}
+@use 'vars';
 
-a { word-break: break-word; }
-h1, h2, h3, h4, h5, a, b, p, span { color: #fff; }
-img { -webkit-user-drag: none; }
-code { background: rgba(0, 0, 0, .5); padding: 3px 6px; }
-
-::-webkit-scrollbar { background-color: #1c1e1f; color: #c5c1b9; }
-::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, .1); display: initial; }
-::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, .15); }
-::-webkit-scrollbar-thumb:active { background-color: rgba(255, 255, 255, .2); }
-::-webkit-scrollbar-corner { background-color: #181a1b; }
-
-.targetted {
-  position: relative;
-
-  &::after {
-    background-color: rgba(250, 166, 26, .1);
-    content: ' ';
-    height: 100%;
-    left: -1em;
-    padding-bottom: .25em;
-    padding-left: .1em;
-    padding-top: .25em;
-    position: absolute;
-    top: -.25em;
-    width: 100%;
-    z-index: -1;
+// Self-hosted fonts, same as the dashboard. Figtree for text, Montserrat for headings.
+@mixin font($family, $path, $weight, $style: normal) {
+  @font-face {
+    font-family: $family;
+    src: url('../fonts/#{$path}.woff2') format('woff2');
+    font-weight: $weight;
+    font-style: $style;
+    font-display: swap;
   }
 }
 
-// Main- & 404 page
-.nothing-found {
-  align-items: center;
-  display: flex;
-  height: 100%;
-  justify-content: center;
-  width: 100%;
+@include font(Figtree, 'figtree/Figtree-Regular', 400);
+@include font(Figtree, 'figtree/Figtree-Italic', 400, italic);
+@include font(Figtree, 'figtree/Figtree-Medium', 500);
+@include font(Figtree, 'figtree/Figtree-SemiBold', 600);
+@include font(Figtree, 'figtree/Figtree-Bold', 700);
+@include font(Montserrat, 'montserrat/Montserrat-Bold', 700);
+@include font('Source Code Pro', 'source-code-pro/SourceCodePro-Regular', 400);
 
-  .code { color: #e74c3c; }
-  h1 { position: relative; text-align: center; width: 100%; }
+// Theme tokens, the root gets .theme-dark or .theme-light (see _layout.html)
+:root, .theme-dark {
+  --bg: #{vars.$dark-secondary};
+  --bg-card: #{vars.$dark-primary};
+  --bg-inset: #{vars.$dark-highlight};
+  --bg-hover: rgba(0, 0, 0, .12);
+  --bar: #4e5058;
+  --hairline: #{vars.$dark-highlight};
+  --text: #{vars.$light-highlight};
+  --text-strong: #fff;
+  --text-body: rgba(255, 255, 255, .82);
+  --text-muted: rgba(255, 255, 255, .55);
+  --text-faint: rgba(255, 255, 255, .35);
+  --spine: #4e5058;
+  --nav-bg: #{rgba(vars.$dark-highlight, .75)};
+  --nav-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  --footer-bg: #{vars.$dark-highlight};
+  --footer-text: #8c8c8c;
+  --scroll-thumb: #{vars.$dark-highlight};
+  --scroll-track: #{vars.$dark-primary};
+  --card-shadow: none;
+  color-scheme: dark;
 }
 
-.intro-container {
-  align-items: center;
-  animation: background-pulse 5s ease-in-out infinite;
-  background: #181818;
+.theme-light {
+  --bg: #{vars.$light-secondary};
+  --bg-card: #fff;
+  --bg-inset: #{vars.$light-primary};
+  --bg-hover: rgba(0, 0, 0, .03);
+  --bar: #d4d7dc;
+  --hairline: #{vars.$light-highlight};
+  --text: #{vars.$dark-highlight};
+  --text-strong: #000;
+  --text-body: rgba(0, 0, 0, .82);
+  --text-muted: rgba(0, 0, 0, .55);
+  --text-faint: rgba(0, 0, 0, .35);
+  --spine: #c4c9ce;
+  --nav-bg: #{rgba(vars.$light-highlight, .75)};
+  --nav-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+  --footer-bg: #{vars.$light-highlight};
+  --footer-text: #696969;
+  --scroll-thumb: #{vars.$gray-light};
+  --scroll-track: #{vars.$light-primary};
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: vars.$font-body;
+  font-size: 1em;
+}
+
+body {
   display: flex;
   flex-direction: column;
-  font-size: 22px;
-  height: 100%;
-  justify-content: center;
-  width: 100%;
-
-  .text { margin: .25em 0; }
-  .title { margin: .1em 0; }
+  min-height: 100vh;
 }
 
-.line-splitter {
-  background: rgba(#fff, .5);
-  height: 3px;
-  margin: 0 auto;
-  margin-top: .5em;
-  width: 80%;
+h1, h2, h3, h4, h5, h6 {
+  font-family: vars.$font-heading;
+  margin: 0;
+}
+
+a {
+  color: vars.$primary;
+  text-decoration: none;
+  word-break: break-word;
+  -webkit-user-drag: none;
+
+  &:hover { text-decoration: underline; }
+}
+
+img { -webkit-user-drag: none; }
+
+code {
+  border-radius: 3px;
+  padding: 2px 5px;
+  font-family: vars.$font-code;
+  font-size: .875em;
+  background-color: var(--bg-inset);
+}
+
+small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.11rem;
 }
 
 .emoji {
+  width: 22px;
   height: 22px;
   object-fit: contain;
   vertical-align: bottom;
-  width: 22px;
 }
 
-// Keyframes
-@keyframes background-pulse {
-  0% { background: #181818; }
-  30% { background: #282828; }
-  60% { background: #282828; }
-  100% { background: #181818; }
+// Code blocks from the markdown renderer
+.highlight {
+  background-color: var(--bg-inset);
+  border-radius: 4px;
+  margin: 4px 0;
+  padding: 8px 10px;
+
+  pre { margin: 0; }
+
+  code {
+    background: transparent;
+    font-size: 14px;
+    padding: 0;
+    white-space: pre-wrap;
+  }
+}
+
+.container {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 40px 60px;
+}
+
+// Footer, same as the dashboard: dark bar with diamond separators
+.footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  min-height: 48px;
+  padding: 10px 15px;
+  font-size: 14px;
+  background-color: var(--footer-bg);
+  color: var(--footer-text);
+
+  > div {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  > div:first-child { margin-right: auto; }
+
+  span + span, span + a, a + a {
+    display: flex;
+    align-items: center;
+    margin-left: 5px;
+
+    &::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      margin-right: 5px;
+      border-radius: 3px;
+      transform: rotate(45deg);
+      background-color: vars.$dark-secondary;
+    }
+  }
+}
+
+.theme-light .footer {
+  span + span, span + a, a + a {
+    &::before { background-color: vars.$gray-light; }
+  }
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-corner { background-color: transparent; }
+
+::-webkit-scrollbar-thumb, ::-webkit-scrollbar-track {
+  border: 4px solid transparent;
+  background-clip: padding-box;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb);
+  min-height: 40px;
+}
+
+::-webkit-scrollbar-track { background-color: var(--scroll-track); }
+
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+  }
 }
