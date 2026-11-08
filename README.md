@@ -1,6 +1,10 @@
 # TicketsAPI
 The tickets function that xelA uses to easily show on web.
 
+> [!IMPORTANT]
+> **Ticket logs have moved to [xela.dev/tickets](https://xela.dev/tickets).**
+> This repository is no longer actively developed. It's kept up for archive reasons, so older ticket links keep working.
+
 ## Requirements
 - Python >=3.13
 - [uv](https://docs.astral.sh/uv/)
